@@ -1,85 +1,143 @@
+import { useState } from 'react';
 import { Task } from '../types/task';
 import { formatDate } from '../utils/helpers';
-import { Trash2, CheckCircle, Circle, Phone, Briefcase, Calendar } from 'lucide-react';
+import {
+  Trash2, CheckCircle, Circle, Phone, Briefcase,
+  Calendar, Tag, Pencil, MessageCircle
+} from 'lucide-react';
+import { EditTaskModal } from './EditTaskModal';
+import { TaskNotesModal } from './TaskNotesModal';
 
 interface TaskCardProps {
   task: Task;
   onDelete: (id: string) => void;
   onToggleStatus: (id: string) => void;
+  onUpdate: (updated: Task) => void;
 }
 
-export function TaskCard({ task, onDelete, onToggleStatus }: TaskCardProps) {
+export function TaskCard({ task, onDelete, onToggleStatus, onUpdate }: TaskCardProps) {
+  const [showEdit, setShowEdit] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
+  const isCompleted = task.status === 'completed';
+  const noteCount = task.notes?.length ?? 0;
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
-              {task.nama}
-            </h3>
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-              task.status === 'completed'
-                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-            }`}>
-              {task.status === 'completed' ? 'Selesai' : 'Pending'}
-            </span>
+    <>
+      <div className={`group relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 flex flex-col overflow-hidden
+        ${isCompleted
+          ? 'border-green-200 dark:border-green-800/50'
+          : 'border-gray-200 dark:border-gray-700'
+        }`}
+      >
+        {/* Top accent bar */}
+        <div className={`h-1 w-full ${isCompleted ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'}`} />
+
+        <div className="p-5 flex flex-col flex-1">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h3 className="font-bold text-base text-gray-900 dark:text-white truncate">
+                  {task.nama}
+                </h3>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full shrink-0
+                  ${isCompleted
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                  }`}>
+                  {isCompleted ? <><CheckCircle size={10} /> Selesai</> : <><Circle size={10} /> Pending</>}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+                <Briefcase size={13} />
+                <span className="truncate">{task.jabatan}</span>
+              </div>
+            </div>
+            {/* Edit button - hover reveal */}
+            <button
+              onClick={() => setShowEdit(true)}
+              className="opacity-0 group-hover:opacity-100 p-1.5 ml-2 shrink-0 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all text-gray-400 hover:text-blue-500"
+              title="Edit task"
+            >
+              <Pencil size={14} />
+            </button>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Briefcase size={14} />
-            <span>{task.jabatan}</span>
+
+          {/* Info rows */}
+          <div className="space-y-1.5 mb-3">
+            <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+              <Phone size={13} />
+              <span>{task.no_telp}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <Tag size={13} className="text-blue-500 dark:text-blue-400 shrink-0" />
+              <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md text-xs font-medium">
+                {task.jenis_task_custom || task.jenis_task}
+              </span>
+            </div>
+          </div>
+
+          {/* Informasi - rendered HTML */}
+          <div
+            className="task-body text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 mb-3 max-h-28 overflow-y-auto"
+            dangerouslySetInnerHTML={{ __html: task.informasi }}
+          />
+
+          {/* Date */}
+          <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mb-4">
+            <Calendar size={11} />
+            <span>{formatDate(task.created_at)}</span>
+          </div>
+
+          {/* Actions */}
+          <div className="mt-auto flex items-center gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <button
+              onClick={() => onToggleStatus(task.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150
+                ${isCompleted
+                  ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:hover:bg-amber-900/40'
+                  : 'bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-300 dark:hover:bg-green-900/40'
+                }`}
+            >
+              {isCompleted ? <><Circle size={13} /> Tandai Pending</> : <><CheckCircle size={13} /> Tandai Selesai</>}
+            </button>
+
+            <button
+              onClick={() => setShowNotes(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
+              title="Catatan"
+            >
+              <MessageCircle size={13} />
+              {noteCount > 0 && <span>{noteCount}</span>}
+            </button>
+
+            <button
+              onClick={() => onDelete(task.id)}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-150"
+            >
+              <Trash2 size={13} />
+              Hapus
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <Phone size={14} />
-          <span>{task.no_telp}</span>
-        </div>
+      {showEdit && (
+        <EditTaskModal
+          task={task}
+          onSave={onUpdate}
+          onClose={() => setShowEdit(false)}
+        />
+      )}
 
-        <div className="flex items-start gap-2 text-sm">
-          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs font-medium">
-            {task.jenis_task_custom || task.jenis_task}
-          </span>
-        </div>
-
-        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
-          {task.informasi}
-        </p>
-
-        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-3">
-          <Calendar size={12} />
-          <span>{formatDate(task.created_at)}</span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
-        <button
-          onClick={() => onToggleStatus(task.id)}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-        >
-          {task.status === 'completed' ? (
-            <>
-              <CheckCircle size={16} className="text-green-600" />
-              <span>Tandai Pending</span>
-            </>
-          ) : (
-            <>
-              <Circle size={16} />
-              <span>Tandai Selesai</span>
-            </>
-          )}
-        </button>
-
-        <button
-          onClick={() => onDelete(task.id)}
-          className="ml-auto flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-        >
-          <Trash2 size={16} />
-          <span>Hapus</span>
-        </button>
-      </div>
-    </div>
+      {showNotes && (
+        <TaskNotesModal
+          task={task}
+          onSave={onUpdate}
+          onClose={() => setShowNotes(false)}
+        />
+      )}
+    </>
   );
 }
