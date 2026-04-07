@@ -3,10 +3,11 @@ import { Task } from '../types/task';
 import { formatDate } from '../utils/helpers';
 import {
   Trash2, CheckCircle, Circle, Phone, Briefcase,
-  Calendar, Tag, Pencil, MessageCircle
+  Calendar, Tag, Pencil, MessageCircle, Eye
 } from 'lucide-react';
 import { EditTaskModal } from './EditTaskModal';
 import { TaskNotesModal } from './TaskNotesModal';
+import { PreviewTaskModal } from './PreviewTaskModal';
 
 interface TaskCardProps {
   task: Task;
@@ -18,6 +19,7 @@ interface TaskCardProps {
 export function TaskCard({ task, onDelete, onToggleStatus, onUpdate }: TaskCardProps) {
   const [showEdit, setShowEdit] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const isCompleted = task.status === 'completed';
   const noteCount = task.notes?.length ?? 0;
 
@@ -80,7 +82,7 @@ export function TaskCard({ task, onDelete, onToggleStatus, onUpdate }: TaskCardP
 
           {/* Informasi - rendered HTML */}
           <div
-            className="task-body text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 mb-3 max-h-28 overflow-y-auto"
+            className="task-body text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 mb-3 max-h-28 overflow-y-auto overflow-x-auto break-words"
             dangerouslySetInnerHTML={{ __html: task.informasi }}
           />
 
@@ -101,6 +103,15 @@ export function TaskCard({ task, onDelete, onToggleStatus, onUpdate }: TaskCardP
                 }`}
             >
               {isCompleted ? <><Circle size={13} /> Tandai Pending</> : <><CheckCircle size={13} /> Tandai Selesai</>}
+            </button>
+
+            <button
+              onClick={() => setShowPreview(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
+              title="Preview Task"
+            >
+              <Eye size={13} />
+              <span>Preview</span>
             </button>
 
             <button
@@ -136,6 +147,13 @@ export function TaskCard({ task, onDelete, onToggleStatus, onUpdate }: TaskCardP
           task={task}
           onSave={onUpdate}
           onClose={() => setShowNotes(false)}
+        />
+      )}
+
+      {showPreview && (
+        <PreviewTaskModal
+          task={task}
+          onClose={() => setShowPreview(false)}
         />
       )}
     </>
